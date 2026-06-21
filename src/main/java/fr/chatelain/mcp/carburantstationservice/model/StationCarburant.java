@@ -24,9 +24,9 @@ public class StationCarburant {
     @Column(name = "id")
     private Long id;
     @Column(name = "latitude", nullable = false)
-    private Long latitude;
+    private Double latitude;
     @Column(name = "longitude", nullable = false)
-    private Long longitude;
+    private Double longitude;
     @Column(name = "code_postal", length = 5)
     private String codePostal;
     @Column(name = "pop", length = 1)
@@ -45,8 +45,6 @@ public class StationCarburant {
     private String codeRegion;
     @Column(name = "automate_24x24")
     private boolean automate24x24;
-    @Column(name = "geom", length = 50)
-    private String geom;
     
     @OneToOne(cascade = CascadeType.ALL)
     private Horaire horaires;
