@@ -41,5 +41,5 @@ public record CarburantJsonDTO (
     @JsonProperty("rupture_fin")  @JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime ruptureFin,
     @JsonProperty("horaires_automate_24_24") String horairesAutomate24x24,
     @JsonProperty("horaires") @JsonDeserialize(using = StringToJsonDeserializer.class) HorairesDTO horairesJson,
-    @JsonProperty("rupture") @JsonDeserialize(using = StringToListDeserializer.class) List<RuptureDTO> rupture
+    @JsonProperty("rupture") RuptureDTO rupture
 ) {}

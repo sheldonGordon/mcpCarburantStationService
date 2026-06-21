@@ -27,5 +27,8 @@ public class PrixCarburant {
     
     @Field("valeur")
     private BigDecimal valeur;
+
+    @Field("id_station")
+    private Long idStation;
 }
 

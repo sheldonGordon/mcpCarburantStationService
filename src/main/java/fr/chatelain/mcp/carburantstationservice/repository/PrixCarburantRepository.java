@@ -8,11 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Repository
 public interface PrixCarburantRepository extends MongoRepository<PrixCarburant, String> {
-    
-    List<PrixCarburant> findByCarburant(CarburantType carburant);
+
+    Optional<PrixCarburant> findByCarburantAndIdStation(CarburantType carburant, Long idStation);
     
     @Query("{ 'maj': { $gte: ?0 } }")
     List<PrixCarburant> findPricesUpdatedAfter(LocalDateTime depuis);

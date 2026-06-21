@@ -31,13 +31,10 @@ public class CarburantDataMapper {
             StationCarburant station = StationCarburant.builder()
                     .id(Long.parseLong(dto.id()))
                     .codePostal(dto.codePostal())
-                    .pop(dto.pop())
                     .adresse(dto.adresse())
                     .ville(dto.ville())
                     .departement(dto.depName())
                     .codeDepartement(dto.depCode())
-                    .region(dto.regName())
-                    .codeRegion(dto.regCode())
                     .automate24x24(isAutomate24x24(dto.horairesAutomate24x24()))
                     .latitude(dto.geom() != null ? dto.geom().lat() : null)
                     .longitude(dto.geom() != null ? dto.geom().lon() : null)
@@ -55,35 +52,13 @@ public class CarburantDataMapper {
                 station.setServices(serviceList);
             }
 
-            // Ajouter les prix si présents
-            if (dto.prixNom() != null && dto.prixValeur() != null) {
-                List<PrixCarburant> prixList = new ArrayList<>();
-                try {
-                    PrixCarburant prix = PrixCarburant.builder()
-                            .carburant(CarburantType.valueOf(dto.prixNom()))
-                            .maj(dto.prixMaj().toLocalDateTime())
-                            .valeur(BigDecimal.valueOf(dto.prixValeur()))
-                            .build();
-                    prixList.add(prix);
-                    station.setPrix(prixList);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Type de carburant inconnu: {}", dto.prixNom());
-                }
-            }
+            // TODO Ajouter les prix si présents
+
 
             // Ajouter les ruptures si présentes
-            if (dto.rupture() != null && !dto.rupture().isEmpty()) {
-                List<RuptureCarburant> ruptureList = new ArrayList<>();
-                for (RuptureDTO ruptureDTO : dto.rupture()) {
-                    RuptureCarburant rupture = RuptureCarburant.builder()
-                            .carburant(CarburantType.valueOf(ruptureDTO.nom()))
-                            .debut(ruptureDTO.debut().toLocalDateTime())
-                            .fin(ruptureDTO.fin().toLocalDateTime())
-                            .type(ruptureDTO.type())
-                            .build();
-                    ruptureList.add(rupture);
-                }
-                station.setRupture(ruptureList);
+            if (dto.rupture() != null) {
+                RuptureCarburant rupture = mapToRuptureCarburant(dto);
+                station.setRupture(rupture);
             }
 
             // Ajouter les horaires si présents
@@ -97,6 +72,15 @@ public class CarburantDataMapper {
             log.error("Erreur lors du mapping de la station: {}", dto.id(), e);
             return null;
         }
+    }
+
+    private static RuptureCarburant mapToRuptureCarburant(CarburantJsonDTO dto) {
+        return RuptureCarburant.builder()
+                .carburant(CarburantType.valueOf(dto.rupture().nom()))
+                .debut(dto.rupture().debut().toLocalDateTime())
+                .fin(dto.rupture().fin().toLocalDateTime())
+                .type(dto.rupture().type())
+                .build();
     }
 
     /**
@@ -138,5 +122,27 @@ public class CarburantDataMapper {
             return "definitive";
         }
         return "temporaire";
+    }
+
+    public PrixCarburant mapToPrixCarburant(CarburantJsonDTO dto, StationCarburant stationCarburant) {
+        if (dto == null || stationCarburant == null) {
+            return null;
+        }
+
+        try {
+            CarburantType carburantType = CarburantType.fromLabel(dto.prixNom())
+                    .orElseThrow(() -> new IllegalArgumentException("Type de carburant non reconnu: " + dto.prixNom()));
+
+            PrixCarburant prixCarburant = PrixCarburant.builder()
+                    .idStation(stationCarburant.getId())
+                    .carburant(carburantType)
+                    .valeur(dto.prixValeur() != null ? new BigDecimal(dto.prixValeur()) : null)
+                    .build();
+
+            return prixCarburant;
+        } catch (Exception e) {
+            log.error("Erreur lors du mapping du prix carburant pour la station: {}", stationCarburant.getId(), e);
+            return null;
+        }
     }
 }

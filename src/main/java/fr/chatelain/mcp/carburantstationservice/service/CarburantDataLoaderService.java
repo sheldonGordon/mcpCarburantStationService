@@ -2,13 +2,17 @@ package fr.chatelain.mcp.carburantstationservice.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.chatelain.mcp.carburantstationservice.mapper.CarburantDataMapper;
+import fr.chatelain.mcp.carburantstationservice.model.CarburantType;
+import fr.chatelain.mcp.carburantstationservice.model.PrixCarburant;
 import fr.chatelain.mcp.carburantstationservice.model.StationCarburant;
 import fr.chatelain.mcp.carburantstationservice.model.dto.CarburantJsonDTO;
+import fr.chatelain.mcp.carburantstationservice.repository.PrixCarburantRepository;
 import fr.chatelain.mcp.carburantstationservice.repository.StationCarburantRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +36,8 @@ public class CarburantDataLoaderService {
     private static final int READ_TIMEOUT = 60000; // 60 secondes
 
     private StationCarburantRepository stationRepository;
+
+    private PrixCarburantRepository prixCarburantRepository;
 
     private CarburantDataMapper mapper;
 
@@ -157,16 +163,38 @@ public class CarburantDataLoaderService {
 
         for (CarburantJsonDTO dto : batch) {
             try {
+                if (StringUtils.hasLength(dto.id())) {
+                    log.warn("ID manquant pour l'enregistrement: {}", dto);
+                    stats.put("errors", stats.get("errors") + 1);
+                    continue;
+                }
+
                 Long stationId = Long.parseLong(dto.id());
 
                 Optional<StationCarburant> existing = stationRepository.findById(stationId);
 
                 if (existing.isPresent()) {
-                    // Mettre à jour
-                    StationCarburant updated = mapper.mapToStationCarburant(dto);
-                    if (updated != null) {
-                        stationRepository.save(updated);
-                        stats.put("updated", stats.get("updated") + 1);
+                    // Créer ou mettre à jour le carburant uniquement
+                    Optional<CarburantType> carburantType = CarburantType.fromLabel(dto.prixNom());
+                    if (!carburantType.isPresent()) {
+                        log.warn("Type de carburant non reconnu pour l'enregistrement: {}", dto);
+                        stats.put("errors", stats.get("errors") + 1);
+                        continue;
+                    }
+                    Optional<PrixCarburant> prixCarburant = prixCarburantRepository.findByCarburantAndIdStation(carburantType.get(), stationId);
+                    //Si le prix existe déjà, on le met à jour, sinon on le crée
+                    if (prixCarburant.isPresent()) {
+                        PrixCarburant updatedPrix = mapper.mapToPrixCarburant(dto, existing.get());
+                        if (updatedPrix != null) {
+                            prixCarburantRepository.save(updatedPrix);
+                            stats.put("updated", stats.get("updated") + 1);
+                        }
+                    } else {
+                        PrixCarburant newPrix = mapper.mapToPrixCarburant(dto, existing.get());
+                        if (newPrix != null) {
+                            prixCarburantRepository.save(newPrix);
+                            stats.put("created", stats.get("created") + 1);
+                        }
                     }
                 } else {
                     // Créer
