@@ -1,5 +1,9 @@
 package fr.chatelain.mcp.carburantstationservice.service;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.chatelain.mcp.carburantstationservice.mapper.CarburantDataMapper;
 import fr.chatelain.mcp.carburantstationservice.model.CarburantType;
@@ -10,6 +14,7 @@ import fr.chatelain.mcp.carburantstationservice.repository.PrixCarburantReposito
 import fr.chatelain.mcp.carburantstationservice.repository.StationCarburantRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -41,6 +46,7 @@ public class CarburantDataLoaderService {
 
     private CarburantDataMapper mapper;
 
+    @Autowired
     private ObjectMapper objectMapper;
     /**
      * Télécharge et traite les données de carburants
@@ -80,8 +86,8 @@ public class CarburantDataLoaderService {
     private List<CarburantJsonDTO> downloadJsonData() throws IOException {
         log.info("Téléchargement du fichier JSON (~120 Mo)...");
 
-        URL url = URI.create(DATA_API_URL).toURL();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        final URL url = URI.create(DATA_API_URL).toURL();
+        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         try {
             connection.setConnectTimeout(CONNECTION_TIMEOUT);
@@ -91,28 +97,43 @@ public class CarburantDataLoaderService {
             connection.setRequestProperty("Accept-Encoding", "gzip");
             connection.setRequestProperty("Accept", "application/json");
 
-            int responseCode = connection.getResponseCode();
+            final int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 throw new IOException("Erreur HTTP: " + responseCode);
             }
 
             // Gestion automatique du GZIP via "Content-Encoding"
-            InputStream inputStream = "gzip".equals(connection.getContentEncoding())
+            final InputStream inputStream = "gzip".equals(connection.getContentEncoding())
                     ? new GZIPInputStream(connection.getInputStream())
                     : connection.getInputStream();
 
-            try (inputStream) {
-                List<CarburantJsonDTO> data = objectMapper.readValue(
-                        inputStream,
-                        new TypeReference<List<CarburantJsonDTO>>() {}
-                );
+            final List<CarburantJsonDTO> data = traiterStream(inputStream);
 
-                log.info("JSON parsé: {} objets trouvés", data.size());
-                return data;
-            }
+            log.info("✓ Téléchargement terminé, {} enregistrements récupérés", data.size());
+            return data;
 
         } finally {
             connection.disconnect();
+        }
+    }
+
+    public List<CarburantJsonDTO> traiterStream(InputStream inputStream) throws IOException {
+        final List<CarburantJsonDTO> data = new ArrayList<>();
+        try (JsonParser parser = objectMapper.getFactory().createParser(inputStream)) {
+
+            // Vérifie qu'on commence bien par un tableau "["
+            if (parser.nextToken() != JsonToken.START_ARRAY) {
+                throw new IllegalStateException("Le JSON attendu doit commencer par un tableau");
+            }
+
+            // Boucle sur chaque objet du tableau
+            while (parser.nextToken() != JsonToken.END_ARRAY) {
+                // Maintenant, le parser utilise le codec de l'objectMapper
+                JsonNode node = parser.readValueAsTree();
+                CarburantJsonDTO dto = objectMapper.treeToValue(node, CarburantJsonDTO.class);
+                data.add(dto);
+            }
+            return data;
         }
     }
 
@@ -163,7 +184,7 @@ public class CarburantDataLoaderService {
 
         for (CarburantJsonDTO dto : batch) {
             try {
-                if (StringUtils.hasLength(dto.id())) {
+                if (!StringUtils.hasLength(dto.id())) {
                     log.warn("ID manquant pour l'enregistrement: {}", dto);
                     stats.put("errors", stats.get("errors") + 1);
                     continue;
@@ -171,35 +192,35 @@ public class CarburantDataLoaderService {
 
                 Long stationId = Long.parseLong(dto.id());
 
-                Optional<StationCarburant> existing = stationRepository.findById(stationId);
+                Optional<StationCarburant> stationCarburant = stationRepository.findById(stationId);
 
-                if (existing.isPresent()) {
+                if (stationCarburant.isPresent()) {
                     // Créer ou mettre à jour le carburant uniquement
-                    Optional<CarburantType> carburantType = CarburantType.fromLabel(dto.prixNom());
-                    if (!carburantType.isPresent()) {
-                        log.warn("Type de carburant non reconnu pour l'enregistrement: {}", dto);
-                        stats.put("errors", stats.get("errors") + 1);
-                        continue;
-                    }
-                    Optional<PrixCarburant> prixCarburant = prixCarburantRepository.findByCarburantAndIdStation(carburantType.get(), stationId);
-                    //Si le prix existe déjà, on le met à jour, sinon on le crée
-                    if (prixCarburant.isPresent()) {
-                        PrixCarburant updatedPrix = mapper.mapToPrixCarburant(dto, existing.get());
-                        if (updatedPrix != null) {
-                            prixCarburantRepository.save(updatedPrix);
-                            stats.put("updated", stats.get("updated") + 1);
-                        }
-                    } else {
-                        PrixCarburant newPrix = mapper.mapToPrixCarburant(dto, existing.get());
-                        if (newPrix != null) {
-                            prixCarburantRepository.save(newPrix);
-                            stats.put("created", stats.get("created") + 1);
+                    if(Objects.nonNull(dto.prixNom()) && Objects.nonNull(dto.prixValeur())) {
+                        CarburantType carburantType = CarburantType.fromLabel(dto.prixNom())
+                                .orElseThrow(() -> new IllegalArgumentException("Type de carburant non reconnu: " + dto.prixNom()));
+
+                        Optional<PrixCarburant> prixCarburant = prixCarburantRepository.findByCarburantAndIdStation(carburantType, stationId);
+                        //Si le prix existe déjà, on le met à jour, sinon on le créer
+                        if (prixCarburant.isPresent()) {
+                            PrixCarburant updatedPrix = mapper.mapToPrixCarburant(dto, stationCarburant.get());
+                            if (Objects.nonNull(updatedPrix)) {
+                                prixCarburantRepository.save(updatedPrix);
+                                stats.put("updated", stats.get("updated") + 1);
+                            }
+                        } else {
+                            PrixCarburant newPrix = mapper.mapToPrixCarburant(dto, stationCarburant.get());
+                            if (Objects.nonNull(newPrix)) {
+                                stationCarburant.get().addPrixCarburant(newPrix);
+                                stationRepository.save(stationCarburant.get());
+                                stats.put("created", stats.get("created") + 1);
+                            }
                         }
                     }
                 } else {
                     // Créer
                     StationCarburant newStation = mapper.mapToStationCarburant(dto);
-                    if (newStation != null) {
+                    if (Objects.nonNull(newStation)) {
                         stationRepository.save(newStation);
                         stats.put("created", stats.get("created") + 1);
                     }

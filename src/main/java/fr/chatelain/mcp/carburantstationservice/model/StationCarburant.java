@@ -24,10 +24,13 @@ public class StationCarburant {
     private String departement;
     private String codeDepartement;
     private boolean automate24x24;
-    
+
     private Horaire horaires;
     private List<Service> services;
-    private RuptureCarburant rupture;
     private List<PrixCarburant> prixCarburants;
+
+    public void addPrixCarburant(PrixCarburant newPrix) {
+        this.prixCarburants.add(newPrix);
+    }
 }
 

@@ -16,7 +16,7 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CarburantJsonDTO (
-    @JsonProperty("id") String id,
+    String id,
     @JsonProperty("cp") String codePostal,
     @JsonProperty("pop") String pop,
     @JsonProperty("adresse") String adresse,
@@ -36,10 +36,6 @@ public record CarburantJsonDTO (
     @JsonProperty("epci_name") String epciName,
     @JsonProperty("com_arm_name") String communeName,
     @JsonProperty("services_service") List<String> services,
-    @JsonProperty("rupture_nom") String ruptureNom,
-    @JsonProperty("rupture_debut") @JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime rupturDebut,
-    @JsonProperty("rupture_fin")  @JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime ruptureFin,
     @JsonProperty("horaires_automate_24_24") String horairesAutomate24x24,
-    @JsonProperty("horaires") @JsonDeserialize(using = StringToJsonDeserializer.class) HorairesDTO horairesJson,
-    @JsonProperty("rupture") RuptureDTO rupture
+    @JsonProperty("horaires") @JsonDeserialize(using = StringToJsonDeserializer.class) HorairesDTO horairesJson
 ) {}
