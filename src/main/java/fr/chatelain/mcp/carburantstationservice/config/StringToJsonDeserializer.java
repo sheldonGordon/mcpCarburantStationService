@@ -13,12 +13,23 @@ public class StringToJsonDeserializer extends JsonDeserializer<Object> implement
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
-        String json = p.getValueAsString();
-        if (json == null || json.isEmpty()) return null;
+        // On récupère le nœud sous forme d'arbre (JsonNode)
+        JsonNode node = p.readValueAsTree();
 
-        // On utilise le codec déjà configuré dans le contexte de Jackson
-        // On crée un parser pour la chaîne JSON interne
-        return p.getCodec().readValue(p.getCodec().getFactory().createParser(json), type);
+        // Si c'est un objet, on le convertit directement
+        if (node.isObject()) {
+            return p.getCodec().treeToValue(node, type.getRawClass());
+        }
+
+        // Si c'est une chaîne, on la re-parse (cas où le JSON est échappé)
+        if (node.isTextual()) {
+            String json = node.asText();
+            if (json == null || json.isEmpty()) return null;
+            try (JsonParser inner = p.getCodec().getFactory().createParser(json)) {
+                return p.getCodec().readValue(inner, type);
+            }
+        }
+        return null;
     }
 
     @Override

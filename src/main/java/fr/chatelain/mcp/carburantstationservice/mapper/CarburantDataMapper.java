@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +37,8 @@ public class CarburantDataMapper {
                     .departement(dto.depName())
                     .codeDepartement(dto.depCode())
                     .automate24x24(isAutomate24x24(dto.horairesAutomate24x24()))
-                    .latitude(Objects.nonNull(dto.geom()) ? dto.geom().lat() : null)
-                    .longitude(Objects.nonNull(dto.geom()) ? dto.geom().lon() : null)
+                    .latitude(Objects.nonNull(dto.geom()) ? bigDecimalFormatForMongo(dto.geom().lat()) : null)
+                    .longitude(Objects.nonNull(dto.geom()) ? bigDecimalFormatForMongo(dto.geom().lon()) : null)
                     .build();
 
             // Ajouter les services
@@ -83,19 +84,19 @@ public class CarburantDataMapper {
                 .automate24x24(horairesJson.automate2424())
                 .build();
 
-        // Le parsing complet du JSON des horaires nécessiterait un parser JSON
-        // Pour l'instant, on crée les 7 jours de base
-        List<JourHoraire> jours = new ArrayList<>();
+        if (Objects.nonNull(horairesJson.jours())) {
+            List<JourHoraire> jours = new ArrayList<>();
 
-        for (JourDTO jourDTO : horairesJson.jours()) {
-            JourHoraire jour = JourHoraire.builder()
-                    .nom(jourDTO.nom())
-                    .ferme(jourDTO.ferme())
-                    .build();
-            jours.add(jour);
+            for (JourDTO jourDTO : horairesJson.jours()) {
+                JourHoraire jour = JourHoraire.builder()
+                        .nom(jourDTO.nom())
+                        .ferme(jourDTO.ferme())
+                        .build();
+                jours.add(jour);
+            }
+
+            horaire.setJours(jours);
         }
-
-        horaire.setJours(jours);
         return horaire;
     }
 
@@ -118,11 +119,21 @@ public class CarburantDataMapper {
             return PrixCarburant.builder()
                     .idStation(stationCarburant.getId())
                     .carburant(carburantType)
-                    .valeur(Objects.nonNull(dto.prixValeur()) ? new BigDecimal(dto.prixValeur()) : null)
+                    .valeur(Objects.nonNull(dto.prixValeur()) ? bigDecimalFormatForMongo(dto.prixValeur()) : null)
                     .build();
         } catch (Exception e) {
             log.error("Erreur lors du mapping du prix carburant pour la station: {}", stationCarburant.getId(), e);
             return null;
         }
+    }
+
+    private BigDecimal bigDecimalFormatForMongo(Double value) {
+        if (value == null){
+            return null;
+        }
+
+        return BigDecimal.valueOf(value)
+                .setScale(8, java.math.RoundingMode.HALF_UP)
+                .stripTrailingZeros();
     }
 }

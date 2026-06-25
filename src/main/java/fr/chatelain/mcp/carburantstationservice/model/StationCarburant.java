@@ -3,8 +3,12 @@ package fr.chatelain.mcp.carburantstationservice.model;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.annotation.Id;
 import lombok.*;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Document(collection = "stations_carburant")
 @Getter
@@ -16,8 +20,10 @@ import java.util.List;
 public class StationCarburant {
     @Id
     private Long id;
-    private Double latitude;
-    private Double longitude;
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal latitude;
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal longitude;
     private String codePostal;
     private String adresse;
     private String ville;
@@ -30,7 +36,11 @@ public class StationCarburant {
     private List<PrixCarburant> prixCarburants;
 
     public void addPrixCarburant(PrixCarburant newPrix) {
-        this.prixCarburants.add(newPrix);
+        if(Objects.nonNull(this.prixCarburants)) {
+            this.prixCarburants.add(newPrix);
+        } else {
+            this.prixCarburants = List.of(newPrix);
+        }
     }
 }
 

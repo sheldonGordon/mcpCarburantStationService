@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -26,6 +27,6 @@ public interface StationCarburantRepository extends MongoRepository<StationCarbu
      * Recherche les stations carburant dans un périmètre donné autour d'une latitude/longitude
      */
     @Query("{ $expr: { $lte: [ { $sqrt: { $add: [ { $pow: [ { $multiply: [ { $subtract: [ '$latitude', ?0 ] }, 111.2 ] }, 2 ] }, { $pow: [ { $multiply: [ { $subtract: [ '$longitude', ?1 ] }, 111.2 ] }, 2 ] } ] } }, ?2 ] } }")
-    List<StationCarburant> findStationsProches(Double latitude, Double longitude, double perimetre);
+    List<StationCarburant> findStationsProches(BigDecimal latitude, BigDecimal longitude, double perimetre);
 }
 

@@ -4,6 +4,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Field;
 import lombok.*;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
@@ -25,7 +26,7 @@ public class PrixCarburant {
     @Field("maj")
     private LocalDateTime maj;
     
-    @Field("valeur")
+    @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal valeur;
 
     @Field("id_station")
