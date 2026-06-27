@@ -7,22 +7,11 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StationCarburantRepository extends MongoRepository<StationCarburant, Long> {
-    
-    List<StationCarburant> findByVille(String ville);
-    
-    List<StationCarburant> findByDepartement(String departement);
-    
-    List<StationCarburant> findByCodePostalStartingWith(String codePostal);
-    
-    @Query("{ 'automate24x24': true }")
-    List<StationCarburant> findAllAutomate24x24();
-    
-    @Query("{ 'region': ?0 }")
-    List<StationCarburant> findByRegion(String region);
-    
+
     /**
      * Recherche les stations carburant dans un périmètre donné autour d'une latitude/longitude
      */

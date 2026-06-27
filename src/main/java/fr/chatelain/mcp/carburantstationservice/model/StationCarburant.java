@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.FieldType;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Document(collection = "stations_carburant")
 @Getter
@@ -40,6 +41,22 @@ public class StationCarburant {
             this.prixCarburants.add(newPrix);
         } else {
             this.prixCarburants = List.of(newPrix);
+        }
+    }
+
+    public void upsertPrixCarburant(PrixCarburant nouveauPrix) {
+        // Cherche le prix existant par type de carburant
+        Optional<PrixCarburant> existing = this.prixCarburants.stream()
+                .filter(p -> p.getCarburant().equals(nouveauPrix.getCarburant()))
+                .findFirst();
+
+        if (existing.isPresent()) {
+            // Mise à jour de l'existant
+            PrixCarburant prixToUpdate = existing.get();
+            prixToUpdate.setValeur(nouveauPrix.getValeur());
+        } else {
+            // Ajout du nouveau
+            this.prixCarburants.add(nouveauPrix);
         }
     }
 }

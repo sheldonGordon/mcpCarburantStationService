@@ -197,24 +197,22 @@ public class CarburantDataLoaderService {
                 if (stationCarburant.isPresent()) {
                     // Créer ou mettre à jour le carburant uniquement
                     if(Objects.nonNull(dto.prixNom()) && Objects.nonNull(dto.prixValeur())) {
-                        CarburantType carburantType = CarburantType.fromLabel(dto.prixNom())
+                        CarburantType.fromLabel(dto.prixNom())
                                 .orElseThrow(() -> new IllegalArgumentException("Type de carburant non reconnu: " + dto.prixNom()));
 
-                        Optional<PrixCarburant> prixCarburant = prixCarburantRepository.findByCarburantAndIdStation(carburantType, stationId);
-                        //Si le prix existe déjà, on le met à jour, sinon on le créer
-                        if (prixCarburant.isPresent()) {
-                            PrixCarburant updatedPrix = mapper.mapToPrixCarburant(dto, stationCarburant.get());
-                            if (Objects.nonNull(updatedPrix)) {
-                                prixCarburantRepository.save(updatedPrix);
-                                stats.put("updated", stats.get("updated") + 1);
-                            }
-                        } else {
-                            PrixCarburant newPrix = mapper.mapToPrixCarburant(dto, stationCarburant.get());
-                            if (Objects.nonNull(newPrix)) {
-                                stationCarburant.get().addPrixCarburant(newPrix);
-                                stationRepository.save(stationCarburant.get());
-                                stats.put("created", stats.get("created") + 1);
-                            }
+                        StationCarburant station = stationCarburant.get();
+
+                        PrixCarburant nouveauPrix = mapper.mapToPrixCarburant(dto, station);
+
+                        if (Objects.nonNull(nouveauPrix)) {
+                            boolean existeDeja = station.getPrixCarburants().stream()
+                                    .anyMatch(p -> p.getCarburant().equals(nouveauPrix.getCarburant()));
+
+                            station.upsertPrixCarburant(nouveauPrix);
+                            stationRepository.save(station);
+
+                            String key = existeDeja ? "updated" : "created";
+                            stats.put(key, stats.get(key) + 1);
                         }
                     }
                 } else {
