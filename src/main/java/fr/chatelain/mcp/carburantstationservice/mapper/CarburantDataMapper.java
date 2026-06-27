@@ -1,14 +1,13 @@
 package fr.chatelain.mcp.carburantstationservice.mapper;
 
 import fr.chatelain.mcp.carburantstationservice.model.*;
-import fr.chatelain.mcp.carburantstationservice.model.dto.CarburantJsonDTO;
-import fr.chatelain.mcp.carburantstationservice.model.dto.HorairesDTO;
-import fr.chatelain.mcp.carburantstationservice.model.dto.JourDTO;
+import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.CarburantJsonDTO;
+import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.HorairesDTO;
+import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.JourDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

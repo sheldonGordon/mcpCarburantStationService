@@ -1,15 +1,13 @@
 package fr.chatelain.mcp.carburantstationservice.service;
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.chatelain.mcp.carburantstationservice.mapper.CarburantDataMapper;
 import fr.chatelain.mcp.carburantstationservice.model.CarburantType;
 import fr.chatelain.mcp.carburantstationservice.model.PrixCarburant;
 import fr.chatelain.mcp.carburantstationservice.model.StationCarburant;
-import fr.chatelain.mcp.carburantstationservice.model.dto.CarburantJsonDTO;
+import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.CarburantJsonDTO;
 import fr.chatelain.mcp.carburantstationservice.repository.PrixCarburantRepository;
 import fr.chatelain.mcp.carburantstationservice.repository.StationCarburantRepository;
 import lombok.AllArgsConstructor;

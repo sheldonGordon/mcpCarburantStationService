@@ -1,4 +1,4 @@
-package fr.chatelain.mcp.carburantstationservice.model.dto;
+package fr.chatelain.mcp.carburantstationservice.model.dto.carburant;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
