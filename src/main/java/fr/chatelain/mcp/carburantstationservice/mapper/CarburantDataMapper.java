@@ -5,6 +5,7 @@ import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.CarburantJso
 import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.HorairesDTO;
 import fr.chatelain.mcp.carburantstationservice.model.dto.carburant.JourDTO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -36,8 +37,12 @@ public class CarburantDataMapper {
                     .departement(dto.depName())
                     .codeDepartement(dto.depCode())
                     .automate24x24(isAutomate24x24(dto.horairesAutomate24x24()))
-                    .latitude(Objects.nonNull(dto.geom()) ? bigDecimalFormatForMongo(dto.geom().lat()) : null)
-                    .longitude(Objects.nonNull(dto.geom()) ? bigDecimalFormatForMongo(dto.geom().lon()) : null)
+                    .location(Objects.nonNull(dto.geom())
+                            ? new GeoJsonPoint(
+                            dto.geom().lon(), // Attention : Longitude en premier !
+                            dto.geom().lat()  // Ensuite : Latitude
+                    )
+                            : null)
                     .build();
 
             // Ajouter les services

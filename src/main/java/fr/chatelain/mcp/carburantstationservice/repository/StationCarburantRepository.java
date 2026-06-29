@@ -15,7 +15,8 @@ public interface StationCarburantRepository extends MongoRepository<StationCarbu
     /**
      * Recherche les stations carburant dans un périmètre donné autour d'une latitude/longitude
      */
-    @Query("{ $expr: { $lte: [ { $sqrt: { $add: [ { $pow: [ { $multiply: [ { $subtract: [ '$latitude', ?0 ] }, 111.2 ] }, 2 ] }, { $pow: [ { $multiply: [ { $subtract: [ '$longitude', ?1 ] }, 111.2 ] }, 2 ] } ] } }, ?2 ] } }")
-    List<StationCarburant> findStationsProches(BigDecimal latitude, BigDecimal longitude, double perimetre);
+    // $maxDistance est en MÈTRES (10km = 10000)
+    @Query("{ 'location': { $nearSphere: { $geometry: { type: 'Point', coordinates: [?1, ?0] }, $maxDistance: ?2 } } }")
+    List<StationCarburant> findStationsProches(double lat, double lon, double distanceEnMetres);
 }
 

@@ -1,5 +1,8 @@
 package fr.chatelain.mcp.carburantstationservice.model;
 
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.annotation.Id;
 import lombok.*;
@@ -21,10 +24,8 @@ import java.util.Optional;
 public class StationCarburant {
     @Id
     private Long id;
-    @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal latitude;
-    @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal longitude;
+    @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
+    private GeoJsonPoint location;
     private String codePostal;
     private String adresse;
     private String ville;

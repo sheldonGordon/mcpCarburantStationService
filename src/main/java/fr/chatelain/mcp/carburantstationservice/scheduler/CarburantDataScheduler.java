@@ -38,6 +38,7 @@ public class CarburantDataScheduler {
      * Décommentez cette ligne pour tester lors du démarrage
      * @Scheduled(initialDelay = 5000) // Attendre 5 secondes après le démarrage
      */
+    /**
     @Scheduled(initialDelay = 5000)
     public void loadCarburantDataOnStartup() {
         log.info("🔄 Test de chargement des données au démarrage");
@@ -47,6 +48,6 @@ public class CarburantDataScheduler {
         } catch (Exception e) {
             log.error("✗ Erreur lors du chargement des données au démarrage", e);
         }
-    }
+    }*/
 }
 
